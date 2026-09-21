@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Galaxia de Flores Amarillas 🌻 - Agujero Negro & Recuerdos 3D</title>
+  <meta name="description" content="Una galaxia 3D interactiva con agujero negro, anillo dorado, frases personalizables y tus fotos flotando en el espacio.">
+  
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌻</text></svg>">
+
+  <!-- External CDNs: Tailwind CSS, FontAwesome, Google Fonts, Three.js -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000000;
+      overflow: hidden;
+      font-family: 'Montserrat', sans-serif;
+      color: #ffffff;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    .font-indie {
+      font-family: 'Indie Flower', 'Bradley Hand', 'Segoe Script', cursive;
+    }
+
+    /* Main Floating Header Title */
+    #main-title {
+      position: fixed;
+      top: 30px;
+      left: 0;
+      right: 0;
+      width: 100%;
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      color: #FFFACD;
+      text-shadow: 0 0 10px #FFD700, 0 0 20px #FFA500, 0 0 30px rgba(255, 215, 0, 0.6);
+      z-index: 20;
+      pointer-events: none;
+      text-align: center;
+      line-height: 1.2;
+      padding: 0 15px;
+      transition: all 0.5s ease;
+    }
+
+    /* Start Overlay Screen */
+    #start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #0a0618 0%, #000000 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: #fff;
+      z-index: 9999;
+      padding: 20px;
+      cursor: pointer;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+
+    #start-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    #start-heart {
+      font-size: clamp(80px, 22vmin, 150px);
+      line-height: 1;
+      display: block;
+      filter: drop-shadow(0 0 15px rgba(255,215,0,0.8)) drop-shadow(0 0 35px rgba(255,165,0,0.5));
+      animation: heartPulse 1.35s ease-in-out infinite;
+      transform-origin: 50% 55%;
+    }
+
+    @keyframes heartPulse {
+      0%, 100% { transform: scale(1); }
+      12% { transform: scale(1.15); }
+      24% { transform: scale(1); }
+      36% { transform: scale(1.08); }
+      50% { transform: scale(1); }
+    }
+
+    #start-text {
+      font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+      color: #FFFACD;
+      text-shadow: 0 0 10px #FFD700;
+      text-align: center;
+      margin-top: 24px;
+      animation: textBlink 2s ease-in-out infinite;
+    }
+
+    @keyframes textBlink {
+      0%, 100% { opacity: 0.55; }
+      50% { opacity: 1; }
+    }
+
+    /* Glassmorphism Control Panel Drawer */
+    .glass-panel {
+      background: rgba(12, 8, 28, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 215, 0, 0.25);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.15);
+    }
+
+    .glow-btn {
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+    .glow-btn:hover {
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
+      transform: translateY(-2px);
+    }
+
+    /* Equalizer animation for music */
+    .eq-bar {
+      width: 3px;
+      background-color: #facc15;
+      border-radius: 3px;
+      animation: eqPulse 0.8s ease-in-out infinite alternate;
+    }
+    .eq-bar:nth-child(1) { animation-delay: 0.0s; height: 12px; }
+    .eq-bar:nth-child(2) { animation-delay: 0.2s; height: 16px; }
+    .eq-bar:nth-child(3) { animation-delay: 0.4s; height: 8px; }
+    .eq-bar:nth-child(4) { animation-delay: 0.1s; height: 14px; }
+
+    @keyframes eqPulse {
+      0% { transform: scaleY(0.3); }
+      100% { transform: scaleY(1.1); }
+    }
+
+    /* Scrollbar customization for drawer */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 215, 0, 0.3); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 215, 0, 0.7); }
+  </style>
+</head>
+
+<body>
+
+  <!-- 3D WebGL Canvas -->
+  <canvas id="c"></canvas>
+
+  <!-- Header Main Title -->
+  <h1 id="main-title" class="font-indie">Feliz Día de las Flores Amarillas Mi Niña 🌻</h1>
+
+<!-- Reproductor de Audio -->
+<audio id="audio" loop preload="auto">
+  <source src="assets/musica.m4a" type="audio/mp4">
+</audio>
+
+<!-- Top Right Navigation Control Bar -->
+<div class="fixed top-5 right-5 z-30 flex items-center gap-3">
+  <!-- Music Toggle Button -->
+  <button id="music-btn" class="glass-panel text-amber-300 hover:text-yellow-200 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-2 glow-btn transition-all">
+    <i id="music-icon" class="fas fa-music text-amber-400"></i>
+    <span id="music-label" class="hidden sm:inline">Música</span>
+    <div id="eq-visualizer" class="flex items-center gap-1 h-4 ml-1 hidden">
+      <div class="eq-bar"></div>
+      <div class="eq-bar"></div>
+      <div class="eq-bar"></div>
+      <div class="eq-bar"></div>
+    </div>
+  </button>
+</div>
+
+<!-- Lógica en JavaScript -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const audio = document.getElementById('audio');
+    const musicBtn = document.getElementById('music-btn');
+    const musicIcon = document.getElementById('music-icon');
+    const eqVisualizer = document.getElementById('eq-visualizer');
+    const startScreen = document.getElementById('start-screen');
+
+    // Cambia la interfaz a estado de reproducción
+    function setUIPlaying() {
+      if (musicIcon) musicIcon.className = "fas fa-volume-high text-amber-400";
+      if (eqVisualizer) eqVisualizer.classList.remove('hidden');
+    }
+
+    // Cambia la interfaz a estado de pausa
+    function setUIPaused() {
+      if (musicIcon) musicIcon.className = "fas fa-music text-amber-400";
+      if (eqVisualizer) eqVisualizer.classList.add('hidden');
+    }
+
+    // Reproduce el audio asegurando la interacción inicial
+    function playAudio() {
+      audio.play().then(() => {
+        setUIPlaying();
+      }).catch(err => {
+        console.warn("El navegador solicitó interacción del usuario:", err);
+      });
+    }
+
+    // 1. Iniciar música al tocar la pantalla de inicio
+    if (startScreen) {
+      startScreen.addEventListener('click', () => {
+        playAudio();
+      });
+    }
+
+    // 2. Controlar Pausa / Reproducción desde el botón superior
+    if (musicBtn) {
+      musicBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Evita interferencias con otros clics
+        if (audio.paused) {
+          playAudio();
+        } else {
+          audio.pause();
+          setUIPaused();
+        }
+      });
+    }
+  });
+</script>
+
+    <!-- Flower Super Burst Button -->
+    <button id="burst-btn" class="glass-panel text-yellow-300 hover:text-amber-200 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-2 glow-btn transition-all">
+      <i class="fas fa-wand-magic-sparkles text-amber-400"></i>
+      <span class="hidden sm:inline">Ráfaga 🌻</span>
+    </button>
+
+    <!-- Customizer Drawer Toggle Button -->
+    <button id="drawer-toggle-btn" class="hidden glass-panel text-amber-300 hover:text-yellow-200 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-2 glow-btn transition-all">
+		<i class="fas fa-pen-to-square text-amber-400"></i>
+		<span class="hidden sm:inline">Personalizar</span>
+	</button>
+  </div>
+
+  <!-- Initial Touch to Start Screen Overlay -->
+  <div id="start-screen">
+    <div id="start-heart" aria-hidden="true">🌻</div>
+    <div id="start-text" class="font-indie">Toca la pantalla para iniciar la Galaxia</div>
+    <p class="text-xs text-amber-200/60 mt-4 font-sans tracking-widest uppercase"></p>
+  </div>
+
+  <!-- Customization Panel Drawer Modal -->
+  <div id="custom-drawer" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex justify-end opacity-0 pointer-events-none transition-opacity duration-300">
+    <div id="drawer-content" class="w-full max-w-md glass-panel h-full p-6 overflow-y-auto flex flex-col justify-between transform translate-x-full transition-transform duration-300 border-l border-amber-500/30">
+      
+      <div>
+        <div class="flex justify-between items-center pb-4 border-b border-amber-500/30">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-sliders text-amber-400 text-lg"></i>
+            <h2 class="font-bold text-lg text-yellow-300">Personalizar Galaxia</h2>
+          </div>
+          <button id="close-drawer-btn" class="text-slate-400 hover:text-white p-2 text-xl">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <form id="custom-form" class="space-y-5 mt-6" onsubmit="event.preventDefault();">
+          
+          <!-- Title Customization -->
+          <div>
+            <label class="block text-xs font-semibold text-amber-300/90 uppercase tracking-wider mb-2">Título Principal</label>
+            <input type="text" id="input-title" class="w-full bg-slate-900/90 border border-amber-500/40 rounded-xl px-4 py-2.5 text-sm text-yellow-100 focus:outline-none focus:border-amber-400" placeholder="Título de tu dedicatoria..." />
+          </div>
+
+          <!-- Galaxy Theme Presets -->
+          <div>
+            <label class="block text-xs font-semibold text-amber-300/90 uppercase tracking-wider mb-2">Tema de la Galaxia</label>
+            <div class="grid grid-cols-2 gap-2" id="theme-selectors">
+              <button type="button" data-theme="gold" class="theme-btn py-2 px-3 rounded-xl border border-amber-400/80 bg-amber-500/20 text-yellow-300 text-xs font-medium flex items-center justify-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-yellow-400"></span> Dorado
+              </button>
+              <button type="button" data-theme="pink" class="theme-btn py-2 px-3 rounded-xl border border-transparent bg-pink-500/20 text-pink-300 text-xs font-medium flex items-center justify-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-pink-400"></span> Neón Rosa
+              </button>
+              <button type="button" data-theme="emerald" class="theme-btn py-2 px-3 rounded-xl border border-transparent bg-emerald-500/20 text-emerald-300 text-xs font-medium flex items-center justify-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-emerald-400"></span> Esmeralda
+              </button>
+              <button type="button" data-theme="blue" class="theme-btn py-2 px-3 rounded-xl border border-transparent bg-cyan-500/20 text-cyan-300 text-xs font-medium flex items-center justify-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-cyan-400"></span> Cósmico
+              </button>
+            </div>
+          </div>
+
+          <!-- Add Photo Uploader -->
+          <div>
+            <label class="block text-xs font-semibold text-amber-300/90 uppercase tracking-wider mb-2">Agregar Fotos Flotantes</label>
+            <div class="flex items-center gap-3">
+              <label class="cursor-pointer bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-xl px-4 py-2 text-xs font-semibold flex items-center gap-2 transition-all">
+                <i class="fas fa-upload"></i> Subir Foto
+                <input type="file" id="input-photo-file" accept="image/*" class="hidden" multiple />
+              </label>
+              <span id="photo-count-label" class="text-xs text-amber-200/60">3 Fotos Cargadas</span>
+            </div>
+            <!-- Photo Previews List -->
+            <div id="photo-preview-grid" class="flex gap-2 mt-3 overflow-x-auto pb-2"></div>
+          </div>
+
+          <!-- Phrases List Customization -->
+          <div>
+            <label class="block text-xs font-semibold text-amber-300/90 uppercase tracking-wider mb-2">Frases Flotantes (Una por línea)</label>
+            <textarea id="input-phrases" rows="6" class="w-full bg-slate-900/90 border border-amber-500/40 rounded-xl p-3 text-xs text-yellow-100 font-indie text-base focus:outline-none focus:border-amber-400 resize-none leading-relaxed" placeholder="Escribe tus frases aquí..."></textarea>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="pt-6 border-t border-amber-500/30 space-y-3">
+        <button id="apply-custom-btn" class="w-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-slate-950 font-bold py-3 rounded-xl text-sm transition-all glow-btn">
+          Actualizar Galaxia 3D
+        </button>
+        <button id="reset-custom-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2 rounded-xl text-xs transition-all">
+          Restablecer Valores de Fábrica
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Config Defaults
+    const DEFAULT_CONFIG = {
+      titulo: "Feliz Día de las Flores Amarillas 🌻",
+      frases: [
+        "🌻 Como el sol busca al girasol, yo te busco a ti",
+        "🌼 Un rayo de luz en forma de flor para ti",
+        "🌻 Tu presencia siempre alegra mi camino",
+        "🌼 Hay personas que son primavera todo el año",
+        "🌻 Donde hay luz, siempre floreces tú",
+        "🌼 Gracias por sembrar tanta paz en mi vida",
+        "🌻 No hay día gris que tu luz no pueda pintar",
+        "🌼 Floreces donde sea que estés",
+        "🌻 Tu sonrisa ilumina hasta el día más nublado",
+        "🌼 Hay detalles pequeños que guardan un cariño gigante",
+        "🌻 Contigo los días malos duran muy poco",
+        "🌼 Un poquito de amarillo para alegrar tu día",
+        "🌻 No importan los kilómetros, tu luz siempre llega",
+        "🌼 Tienes el don de hacer todo más especial",
+        "🌻 Gracias por ser refugio y luz al mismo tiempo",
+        "🌼 Tu bondad siempre deja una huella dorada",
+        "🌻 Hoy el día es más bonito solo porque estás en él",
+        "🌼 Que nunca te falte la luz que tú le das a los demás",
+        "🌻 Un abrazo apretado en forma de flor",
+        "🌼 Contigo la vida se siente un poco más ligera",
+        "🌻 Hay cariño que no necesita fechas para demostrarse",
+        "🌼 Gracias por caminar a mi lado siempre",
+        "🌻 Una flor para recordarte lo mucho que aportas",
+        "🌼 Tu energía siempre aclara cualquier sombra",
+        "🌻 Qué lindo coincidir contigo en esta vida",
+        "🌼 Siempre es un buen día para darte las gracias",
+        "🌻 Llenas de color cada espacio donde estás",
+        "🌼 Feliz día para quien hace el mundo más bonito"
+      ],
+      fotos: [
+        "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=400&q=80",
+        "https://images.unsplash.com/photo-1530092285049-1c42085fd395?auto=format&fit=crop&w=400&q=80",
+        "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=400&q=80"
+      ],
+      theme: 'gold'
+    };
+
+    let CURRENT_CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+
+document.addEventListener('DOMContentLoaded', () => {
+  const audio = document.getElementById('audio');
+  const musicBtn = document.getElementById('music-btn');
+  const musicIcon = document.getElementById('music-icon');
+  const eqVisualizer = document.getElementById('eq-visualizer');
+  const startScreen = document.getElementById('start-screen');
+
+  // Funciones para actualizar la interfaz del botón
+  function setUIPlaying() {
+    if (musicIcon) musicIcon.className = "fas fa-volume-high text-amber-400";
+    if (eqVisualizer) eqVisualizer.classList.remove('hidden');
+  }
+
+  function setUIPaused() {
+    if (musicIcon) musicIcon.className = "fas fa-music text-amber-400";
+    if (eqVisualizer) eqVisualizer.classList.add('hidden');
+  }
+
+  function playMySong() {
+    audio.play().then(() => {
+      setUIPlaying();
+    }).catch(err => {
+      console.warn("Esperando interacción del usuario para reproducir audio:", err);
+    });
+  }
+
+  // 1. Iniciar tu canción al presionar la pantalla de bienvenida
+  if (startScreen) {
+    startScreen.addEventListener('click', () => {
+      playMySong();
+    });
+  }
+
+  // 2. Controlar la reproducción / pausa desde el botón de música
+  if (musicBtn) {
+    musicBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (audio.paused) {
+        playMySong();
+      } else {
+        audio.pause();
+        setUIPaused();
+      }
+    });
+  }
+});
+
+    function playLullabyMelody() {
+      if (!isAudioPlaying || !audioCtx) return;
+
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      // Soft Relaxing Lullaby Pentatonic Sequence
+      const notes = [
+        261.63, 329.63, 392.00, 523.25, 659.25, 783.99,
+        392.00, 329.63, 440.00, 523.25, 659.25, 880.00
+      ];
+
+      const note = notes[Math.floor(Math.random() * notes.length)];
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(note, audioCtx.currentTime);
+
+      gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 2.8);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 2.9);
+
+      audioLoopTimer = setTimeout(playLullabyMelody, Math.random() * 800 + 600);
+    }
+
+    function toggleAudio() {
+      initWebAudio();
+      const musicIcon = document.getElementById('music-icon');
+      const eqVisualizer = document.getElementById('eq-visualizer');
+
+      if (!isAudioPlaying) {
+        isAudioPlaying = true;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        playLullabyMelody();
+        musicIcon.className = "fas fa-volume-high text-amber-400";
+        eqVisualizer.classList.remove('hidden');
+      } else {
+        isAudioPlaying = false;
+        if (audioLoopTimer) clearTimeout(audioLoopTimer);
+        musicIcon.className = "fas fa-music text-amber-400";
+        eqVisualizer.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('music-btn').addEventListener('click', toggleAudio);
+
+    // Three.js Scene Setup
+    const canvas = document.getElementById('c');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x020108);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+    let targetDist = 320, currentDist = 320, rotX = 0.2, rotY = 0;
+
+    // Starfield Generation
+    (function createStarfield(count = 2500, spread = 3200) {
+      const g = new THREE.BufferGeometry();
+      const pos = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const r = spread * (0.2 + Math.random() * 0.8);
+        const th = Math.random() * Math.PI * 2;
+        const ph = Math.acos(2 * Math.random() - 1);
+        pos[i * 3 + 0] = r * Math.sin(ph) * Math.cos(th);
+        pos[i * 3 + 1] = r * Math.cos(ph);
+        pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+      }
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      scene.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 1.5, color: 0xffffff, transparent: true, opacity: 0.9 })));
+    })();
+
+    // Black Hole Core
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0x010103 });
+    const core = new THREE.Mesh(new THREE.SphereGeometry(42, 64, 64), coreMat);
+    scene.add(core);
+
+    // Outer Glow Sprite Texture Generator
+    const GLOW_BASE = 380;
+    function makeGlowTexture(theme = 'gold') {
+      const size = 512;
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const g = c.getContext('2d');
+      const grad = g.createRadialGradient(size / 2, size / 2, size * 0.05, size / 2, size / 2, size * 0.5);
+      
+      let c1 = '255,235,130', c2 = '255,180,0';
+      if (theme === 'pink') { c1 = '244,114,182'; c2 = '192,38,211'; }
+      else if (theme === 'emerald') { c1 = '52,211,153'; c2 = '16,185,129'; }
+      else if (theme === 'blue') { c1 = '56,189,248'; c2 = '59,130,246'; }
+
+      grad.addColorStop(0, `rgba(${c1},0.65)`);
+      grad.addColorStop(0.5, `rgba(${c2},0.25)`);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = grad; g.fillRect(0, 0, size, size);
+      return new THREE.CanvasTexture(c);
+    }
+
+    let glowMat = new THREE.SpriteMaterial({ map: makeGlowTexture(CURRENT_CONFIG.theme), transparent: true, depthWrite: false });
+    const glow = new THREE.Sprite(glowMat);
+    glow.scale.set(GLOW_BASE, GLOW_BASE, 1);
+    scene.add(glow);
+
+    // Accretion Ring Texture Generator
+    function makeRingTexture(theme = 'gold') {
+      const size = 1024;
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const g = c.getContext('2d'); g.translate(size / 2, size / 2);
+      const rInner = size * 0.205, rOuter = size * 0.49;
+
+      let stops = [
+        [0.00, 'rgba(255,255,245,1)'],
+        [0.30, 'rgba(255,235,120,1)'],
+        [0.65, 'rgba(255,200,40,0.95)'],
+        [1.00, 'rgba(255,160,0,0.85)']
+      ];
+
+      if (theme === 'pink') {
+        stops = [
+          [0.00, 'rgba(255,240,255,1)'],
+          [0.30, 'rgba(244,114,182,1)'],
+          [0.65, 'rgba(192,38,211,0.95)'],
+          [1.00, 'rgba(126,34,206,0.85)']
+        ];
+      } else if (theme === 'emerald') {
+        stops = [
+          [0.00, 'rgba(240,253,244,1)'],
+          [0.30, 'rgba(52,211,153,1)'],
+          [0.65, 'rgba(16,185,129,0.95)'],
+          [1.00, 'rgba(5,150,105,0.85)']
+        ];
+      } else if (theme === 'blue') {
+        stops = [
+          [0.00, 'rgba(238,242,255,1)'],
+          [0.30, 'rgba(56,189,248,1)'],
+          [0.65, 'rgba(59,130,246,0.95)'],
+          [1.00, 'rgba(29,78,216,0.85)']
+        ];
+      }
+
+      const grd = g.createRadialGradient(0, 0, rInner, 0, 0, rOuter);
+      stops.forEach(s => grd.addColorStop(s[0], s[1]));
+
+      g.fillStyle = grd;
+      g.beginPath(); g.arc(0, 0, rOuter, 0, Math.PI * 2); g.arc(0, 0, rInner, 0, Math.PI * 2, true); g.closePath(); g.fill();
+
+      // Fine concentric ring lines
+      const bandCount = 28;
+      for (let i = 0; i < bandCount; i++) {
+        const r = rInner + (rOuter - rInner) * (i / (bandCount - 1));
+        const dark = i % 3 === 0;
+        g.beginPath();
+        g.arc(0, 0, r, 0, Math.PI * 2);
+        g.lineWidth = (rOuter - rInner) / bandCount * (0.55 + Math.random() * 0.35);
+        g.strokeStyle = dark ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.18)';
+        g.stroke();
+      }
+      return new THREE.CanvasTexture(c);
+    }
+
+    const ringMat = new THREE.MeshBasicMaterial({
+      map: makeRingTexture('gold'),
+      transparent: true,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      opacity: 0.95
+    });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(42, 118, 160), ringMat);
+    ring.rotation.x = Math.PI / 2;
+    scene.add(ring);
+
+    // Floating Words Sprite Group
+    const textGroup = new THREE.Group();
+    scene.add(textGroup);
+
+    function createPhraseSprite(text, color) {
+      const c = document.createElement('canvas'); c.width = 512; c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff'; ctx.shadowColor = color; ctx.shadowBlur = 24;
+
+      const maxWidth = c.width - 48;
+      let fontSize = 54;
+      ctx.font = fontSize + "px 'Indie Flower', cursive";
+      while (ctx.measureText(text).width > maxWidth && fontSize > 22) {
+        fontSize -= 2;
+        ctx.font = fontSize + "px 'Indie Flower', cursive";
+      }
+      ctx.fillText(text, c.width / 2, c.height / 2);
+
+      const tex = new THREE.CanvasTexture(c);
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+      const sp = new THREE.Sprite(mat);
+      sp.scale.set(68, 21.8, 1);
+      return sp;
+    }
+
+    const COLORS_PALETTE = ['#ffd700', '#ffe066', '#ffcc33', '#ffb347', '#fff2b0', '#ffaa00', '#f4c430', '#ffdb58'];
+
+    function rebuildTextGroup() {
+      while (textGroup.children.length > 0) {
+        const child = textGroup.children[0];
+        textGroup.remove(child);
+      }
+
+      const frases = CURRENT_CONFIG.frases.length > 0 ? CURRENT_CONFIG.frases : DEFAULT_CONFIG.frases;
+      const WORD_SLOTS = 140;
+
+      for (let i = 0; i < WORD_SLOTS; i++) {
+        const text = frases[i % frases.length];
+        const sp = createPhraseSprite(text, COLORS_PALETTE[i % COLORS_PALETTE.length]);
+        
+        const phi = Math.acos(2 * Math.random() - 1);
+        const theta = Math.random() * Math.PI * 2;
+        const r = 150 + Math.random() * 130;
+
+        sp.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta));
+        sp.userData = { phi, theta, radius: r, speed: 0.0008 + Math.random() * 0.0012 };
+        textGroup.add(sp);
+      }
+    }
+
+    // Floating Photo Sprites Group
+    const photoGroup = new THREE.Group();
+    scene.add(photoGroup);
+
+    function createPhotoSprite(url, size = 32) {
+      const c = document.createElement('canvas'); c.width = c.height = 256;
+      const tex = new THREE.CanvasTexture(c);
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+      const sp = new THREE.Sprite(mat);
+      sp.scale.set(size, size, 1);
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        // Circular cropped frame with glowing yellow border
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(128, 128, 120, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        const s = Math.max(256 / img.width, 256 / img.height);
+        ctx.drawImage(img, (256 - img.width * s) / 2, (256 - img.height * s) / 2, img.width * s, img.height * s);
+        ctx.restore();
+
+        // Golden Ring Frame
+        ctx.beginPath();
+        ctx.arc(128, 128, 120, 0, Math.PI * 2);
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = '#facc15';
+        ctx.stroke();
+
+        tex.needsUpdate = true;
+      };
+      img.src = url;
+      return sp;
+    }
+
+    function rebuildPhotoGroup() {
+      while (photoGroup.children.length > 0) {
+        photoGroup.remove(photoGroup.children[0]);
+      }
+
+      const fotos = CURRENT_CONFIG.fotos.length > 0 ? CURRENT_CONFIG.fotos : DEFAULT_CONFIG.fotos;
+      const PHOTO_COUNT = 24;
+
+      for (let i = 0; i < PHOTO_COUNT; i++) {
+        const url = fotos[i % fotos.length];
+        const size = 30 + Math.random() * 18;
+        const sp = createPhotoSprite(url, size);
+
+        const phi = Math.acos(2 * Math.random() - 1);
+        const theta = Math.random() * Math.PI * 2;
+        const r = 145 + Math.random() * 160;
+
+        sp.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta));
+        sp.userData = { phi, theta, radius: r, speed: 0.0006 + Math.random() * 0.0012 };
+        photoGroup.add(sp);
+      }
+    }
+
+    // Dynamic Petal / Burst Particles Group
+    const burstGroup = new THREE.Group();
+    scene.add(burstGroup);
+
+    function triggerFlowerBurst() {
+      for (let i = 0; i < 80; i++) {
+        const c = document.createElement('canvas'); c.width = c.height = 64;
+        const ctx = c.getContext('2d');
+        ctx.font = '48px serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(Math.random() > 0.4 ? '🌻' : '🌼', 32, 32);
+
+        const tex = new THREE.CanvasTexture(c);
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+        const sp = new THREE.Sprite(mat);
+        sp.scale.set(16, 16, 1);
+
+        sp.position.set(0, 0, 0);
+        const speed = 2 + Math.random() * 4;
+        const angle = Math.random() * Math.PI * 2;
+        const vZ = (Math.random() - 0.5) * 4;
+
+        sp.userData = {
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          vz: vZ,
+          life: 1.0,
+          decay: 0.008 + Math.random() * 0.008
+        };
+
+        burstGroup.add(sp);
+      }
+    }
+
+    document.getElementById('burst-btn').addEventListener('click', triggerFlowerBurst);
+
+    // Camera Navigation & Drag Mechanics
+    let dragging = false, lastX = 0, lastY = 0;
+
+    function onDown(e) {
+      dragging = true;
+      const t = e.touches ? e.touches[0] : e;
+      lastX = t.clientX; lastY = t.clientY;
+    }
+
+    function onMove(e) {
+      if (!dragging) return;
+      const t = e.touches ? e.touches[0] : e;
+      const dx = (t.clientX - lastX) / window.innerWidth;
+      const dy = (t.clientY - lastY) / window.innerHeight;
+      rotY -= dx * 5;
+      rotX = Math.max(-1.2, Math.min(1.2, rotX + dy * 3.5));
+      lastX = t.clientX; lastY = t.clientY;
+    }
+
+    function onUp() { dragging = false; }
+
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchstart', onDown, { passive: true });
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('touchend', onUp, { passive: true });
+
+    window.addEventListener('wheel', (e) => {
+      targetDist += e.deltaY * 0.25;
+      targetDist = Math.max(150, Math.min(650, targetDist));
+    }, { passive: true });
+
+    // Window Resize Handler
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
+
+    let clockTime = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      clockTime += 0.01;
+
+      ring.rotation.z += 0.0025;
+      glow.scale.set(GLOW_BASE * (1 + Math.sin(clockTime * 0.4) * 0.03), GLOW_BASE * (1 + Math.sin(clockTime * 0.4) * 0.03), 1);
+
+      // Pulse Core
+      const s = 1.0 + 0.04 * Math.sin(clockTime * 3);
+      core.scale.set(s, s, s);
+
+      // Animate Floating Words
+      textGroup.children.forEach(sp => {
+        sp.material.opacity = 0.8 + 0.2 * Math.sin(clockTime * 2);
+        sp.userData.theta += sp.userData.speed;
+        sp.position.x = sp.userData.radius * Math.sin(sp.userData.phi) * Math.cos(sp.userData.theta);
+        sp.position.z = sp.userData.radius * Math.sin(sp.userData.phi) * Math.sin(sp.userData.theta);
+      });
+
+      // Animate Orbiting Photos
+      photoGroup.children.forEach(sp => {
+        sp.material.opacity = 0.85 + 0.15 * Math.sin(clockTime * 2 + sp.userData.radius);
+        sp.userData.theta += sp.userData.speed;
+        sp.position.x = sp.userData.radius * Math.sin(sp.userData.phi) * Math.cos(sp.userData.theta);
+        sp.position.z = sp.userData.radius * Math.sin(sp.userData.phi) * Math.sin(sp.userData.theta);
+      });
+
+      // Animate Petal Bursts
+      for (let i = burstGroup.children.length - 1; i >= 0; i--) {
+        const sp = burstGroup.children[i];
+        sp.position.x += sp.userData.vx;
+        sp.position.y += sp.userData.vy;
+        sp.position.z += sp.userData.vz;
+        sp.userData.life -= sp.userData.decay;
+        sp.material.opacity = sp.userData.life;
+
+        if (sp.userData.life <= 0) {
+          burstGroup.remove(sp);
+        }
+      }
+
+      // Smooth Camera Interpolation
+      currentDist += (targetDist - currentDist) * 0.06;
+      const cx = Math.cos(rotX), sx = Math.sin(rotX);
+      const cy = Math.cos(rotY), sy = Math.sin(rotY);
+      camera.position.set(currentDist * sy * cx, currentDist * sx, currentDist * cy * cx);
+      camera.lookAt(0, 0, 0);
+
+      renderer.render(scene, camera);
+    }
+
+    // Start Screen Launch Mechanics
+    const startScreen = document.getElementById('start-screen');
+    function startGalaxyExperience() {
+      startScreen.classList.add('hidden');
+      if (!isAudioPlaying) {
+        toggleAudio();
+      }
+      triggerFlowerBurst();
+    }
+    startScreen.addEventListener('click', startGalaxyExperience);
+
+    // Customizer Drawer Functionality
+    const drawer = document.getElementById('custom-drawer');
+    const drawerContent = document.getElementById('drawer-content');
+    const inputTitle = document.getElementById('input-title');
+    const inputPhrases = document.getElementById('input-phrases');
+    const inputPhotoFile = document.getElementById('input-photo-file');
+    const photoPreviewGrid = document.getElementById('photo-preview-grid');
+
+    document.getElementById('drawer-toggle-btn').addEventListener('click', () => {
+      // Sync form values
+      inputTitle.value = CURRENT_CONFIG.titulo;
+      inputPhrases.value = CURRENT_CONFIG.frases.join('\n');
+      updatePhotoPreviews();
+
+      drawer.classList.remove('pointer-events-none', 'opacity-0');
+      drawerContent.classList.remove('translate-x-full');
+    });
+
+    document.getElementById('close-drawer-btn').addEventListener('click', closeCustomizerDrawer);
+
+    function closeCustomizerDrawer() {
+      drawerContent.classList.add('translate-x-full');
+      drawer.classList.add('opacity-0');
+      setTimeout(() => drawer.classList.add('pointer-events-none'), 300);
+    }
+
+    // Photo File Upload Handler
+    inputPhotoFile.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          CURRENT_CONFIG.fotos.push(evt.target.result);
+          updatePhotoPreviews();
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    function updatePhotoPreviews() {
+      photoPreviewGrid.innerHTML = '';
+      document.getElementById('photo-count-label').innerText = `${CURRENT_CONFIG.fotos.length} Fotos Cargadas`;
+
+      CURRENT_CONFIG.fotos.forEach((url, index) => {
+        const container = document.createElement('div');
+        container.className = "relative flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border border-amber-400/50 group";
+        
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = "w-full h-full object-cover";
+
+        const delBtn = document.createElement('button');
+        delBtn.type = "button";
+        delBtn.className = "absolute inset-0 bg-black/60 text-red-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity";
+        delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        delBtn.onclick = () => {
+          CURRENT_CONFIG.fotos.splice(index, 1);
+          updatePhotoPreviews();
+        };
+
+        container.appendChild(img);
+        container.appendChild(delBtn);
+        photoPreviewGrid.appendChild(container);
+      });
+    }
+
+    // Galaxy Theme Selector Buttons
+    document.querySelectorAll('#theme-selectors .theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#theme-selectors .theme-btn').forEach(b => b.classList.replace('border-amber-400/80', 'border-transparent'));
+        btn.classList.replace('border-transparent', 'border-amber-400/80');
+        CURRENT_CONFIG.theme = btn.getAttribute('data-theme');
+      });
+    });
+
+    // Apply Changes Button
+    document.getElementById('apply-custom-btn').addEventListener('click', () => {
+      // Apply Title
+      const titleText = inputTitle.value.trim() || DEFAULT_CONFIG.titulo;
+      CURRENT_CONFIG.titulo = titleText;
+      document.getElementById('main-title').innerText = titleText;
+
+      // Apply Phrases
+      const lines = inputPhrases.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      CURRENT_CONFIG.frases = lines.length > 0 ? lines : DEFAULT_CONFIG.frases;
+
+      // Rebuild Accretion Ring & Glow Theme
+      ringMat.map = makeRingTexture(CURRENT_CONFIG.theme);
+      ringMat.needsUpdate = true;
+
+      glow.material.map = makeGlowTexture(CURRENT_CONFIG.theme);
+      glow.material.needsUpdate = true;
+
+      // Rebuild 3D Floating Elements
+      rebuildTextGroup();
+      rebuildPhotoGroup();
+      triggerFlowerBurst();
+
+      closeCustomizerDrawer();
+    });
+
+    // Reset Default Config Button
+    document.getElementById('reset-custom-btn').addEventListener('click', () => {
+      CURRENT_CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      
+      document.getElementById('main-title').innerText = CURRENT_CONFIG.titulo;
+      inputTitle.value = CURRENT_CONFIG.titulo;
+      inputPhrases.value = CURRENT_CONFIG.frases.join('\n');
+      
+      ringMat.map = makeRingTexture('gold');
+      ringMat.needsUpdate = true;
+
+      glow.material.map = makeGlowTexture('gold');
+      glow.material.needsUpdate = true;
+
+      rebuildTextGroup();
+      rebuildPhotoGroup();
+      updatePhotoPreviews();
+      triggerFlowerBurst();
+
+      closeCustomizerDrawer();
+    });
+
+    // Initial setup on window load
+    window.onload = function() {
+      rebuildTextGroup();
+      rebuildPhotoGroup();
+      animate();
+    };
+  </script>
+</body>
+</html>
